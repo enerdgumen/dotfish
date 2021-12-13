@@ -26,8 +26,15 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
       chmod 600 $salt_path
       chmod 600 $folders_path
 
-      echo "Dotfish enabled :-)"
-      touch .fish
+      echo "Dotfish enabled for this folder."
+      if not test -e .fish
+        echo "function hello" > .fish
+        echo "  echo Hello \$argv" >> .fish
+        echo "end" >> .fish
+        echo
+        echo "Added an example .fish script:"
+        cat .fish
+      end
       _dotfish_update
     
     case ""
