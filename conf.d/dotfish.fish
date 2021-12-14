@@ -60,71 +60,79 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
   end
 end
 
-function _dotfish_update --on-variable PWD
+function _dotfish_clear
   set_color 808080
-  if set --query __dotfish_loaded
-    for it in $__dotfish_vars
-      echo "dotfish: -$it (τ)"
-      set --erase $it
-    end
-    set --erase __dotfish_vars
-
-    for it in $__dotfish_functions
-      echo "dotfish: -$it (λ)"
-      functions --erase $it
-    end
-    set --erase __dotfish_functions
-
-    set --erase __dotfish_loaded
+  for it in $__dotfish_vars
+    echo "dotfish: -$it (τ)"
+    set --erase $it
   end
+  set --erase __dotfish_vars
 
-  if test -O .fish
-    set --local forbidden_message "dotfish: forbidden for this folder"
-    set --local store_path ~/.dotfish
-    set --local salt_path $store_path/salt
-    set --local folders_path $store_path/folders
-
-    if not test -O $salt_path -a -O $folders_path
-      echo $forbidden_message >&2
-      return 1
-    end
-
-    set hash (
-      echo -n $PWD |
-      command cat - $salt_path |
-      openssl sha256 |
-      cut -d' ' -f2
-    )
-
-    if not grep --quiet $hash $folders_path
-      echo $forbidden_message >&2
-      return 1
-    end
-
-    set --local prev_vars (set --names --global)
-    set --local prev_functions (functions)
-    source .fish
-
-    set --local curr_vars (set --names --global)
-    set --global __dotfish_vars
-    for it in $curr_vars
-      if not contains $it $prev_vars
-        set --append __dotfish_vars $it
-        echo "dotfish: +$it (τ)"
-      end
-    end
-
-    set --global __dotfish_functions
-    for it in (functions)
-      if not contains $it $prev_functions
-        set --append __dotfish_functions $it
-        echo "dotfish: +$it (λ)"
-      end
-    end
-
-    set --global __dotfish_loaded 1
+  for it in $__dotfish_functions
+    echo "dotfish: -$it (λ)"
+    functions --erase $it
   end
+  set --erase __dotfish_functions
+
+  set --erase __dotfish_loaded
   set_color normal
+end
+
+function _dotfish_load
+  set_color 808080
+  set --local forbidden_message "dotfish: forbidden for this folder"
+  set --local store_path ~/.dotfish
+  set --local salt_path $store_path/salt
+  set --local folders_path $store_path/folders
+
+  if not test -O $salt_path -a -O $folders_path
+    echo $forbidden_message >&2
+    return 1
+  end
+
+  set hash (
+    echo -n $PWD |
+    command cat - $salt_path |
+    openssl sha256 |
+    cut -d' ' -f2
+  )
+
+  if not grep --quiet $hash $folders_path
+    echo $forbidden_message >&2
+    return 1
+  end
+
+  set --local prev_vars (set --names --global)
+  set --local prev_functions (functions)
+  source .fish
+
+  set --local curr_vars (set --names --global)
+  set --global __dotfish_vars
+  for it in $curr_vars
+    if not contains $it $prev_vars
+      set --append __dotfish_vars $it
+      echo "dotfish: +$it (τ)"
+    end
+  end
+
+  set --global __dotfish_functions
+  for it in (functions)
+    if not contains $it $prev_functions
+      set --append __dotfish_functions $it
+      echo "dotfish: +$it (λ)"
+    end
+  end
+
+  set --global __dotfish_loaded $PWD
+  set_color normal
+end
+
+function _dotfish_update --on-variable PWD
+  test $PWD != "$__dotfish_loaded"
+  and _dotfish_clear
+  and test -O .fish
+  and _dotfish_load
+  return
 end
 
 _dotfish_update
