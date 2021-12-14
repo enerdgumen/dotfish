@@ -37,6 +37,18 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
       end
       _dotfish_update
     
+    case load reload
+      if test -O .fish
+        _dotfish_clear
+        _dotfish_load
+      else
+        echo "There is no .fish script in this folder :-("
+        return 1
+      end
+
+    case unload
+      _dotfish_clear
+    
     case ""
       if not test -O .fish
         echo "There is no .fish script in this folder :-("
@@ -55,8 +67,10 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
       for it in $__dotfish_functions; echo "· $it"; end
     
     case -h --help '*'
-      echo "Usage: dotfish       Show current symbols"
-      echo "       dotfish init  Enable the current folder for .fish"
+      echo "Usage: dotfish         Show current symbols"
+      echo "       dotfish init    Enable the current folder for .fish"
+      echo "       dotfish load    Reload the .fish script (alias: reload)"
+      echo "       dotfish unload  Remove the loaded symbols"
   end
 end
 
