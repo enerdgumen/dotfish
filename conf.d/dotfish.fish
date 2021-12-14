@@ -1,30 +1,18 @@
 function dotfish --argument-names cmd --description "Auto-source .fish scripts"
   switch "$cmd"
     case init
+      set --local hash (echo -n $PWD | openssl sha256 | cut -d' ' -f2)
+
       set --local store_path ~/.dotfish
-      set --local salt_path $store_path/salt
-      set --local folders_path $store_path/folders
+      set --local index_path $store_path/index
+      set --local hash_path $store_path/$hash
 
-      if not test -O $salt_path
-        mkdir -p $store_path
-        openssl rand -hex 32 > $salt_path
+      mkdir -p $store_path
+      touch $index_path
+
+      if not grep --quiet "$hash $PWD" $index_path
+        echo "$hash $PWD" >> $index_path
       end
-
-      set hash (
-        echo -n $PWD |
-        command cat - $salt_path |
-        openssl sha256 |
-        cut -d' ' -f2
-      )
-
-      touch $folders_path
-      if not grep --quiet $hash $folders_path
-        echo "$hash $PWD" >> $folders_path
-      end
-
-      chmod 700 $store_path
-      chmod 600 $salt_path
-      chmod 600 $folders_path
 
       echo "Dotfish enabled for this folder."
       if not test -e .fish
@@ -35,14 +23,30 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
         echo "Added an example .fish script:"
         cat .fish
       end
+
+      cp .fish $hash_path
+      
+      chmod 700 $store_path
+      chmod 600 $index_path
+      chmod 600 $hash_path
+
       _dotfish_update
     
+    case diff
+      set --local hash (echo -n $PWD | openssl sha256 | cut -d' ' -f2)
+      set --local hash_path ~/.dotfish/$hash
+      if not test -O $hash_path
+        echo ".fish not found" >&2
+        return 1
+      end
+      diff $hash_path .fish
+
     case load reload
       if test -O .fish
         _dotfish_clear
         _dotfish_load
       else
-        echo "There is no .fish script in this folder :-("
+        echo ".fish not found" >&2
         return 1
       end
 
@@ -51,12 +55,12 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
     
     case ""
       if not test -O .fish
-        echo "There is no .fish script in this folder :-("
+        echo ".fish not found" >&2
         return 1
       end
 
       if not set --query __dotfish_loaded
-        echo "Dotfish is not enabled for this folder :-("
+        echo ".fish not loaded" >&2
         return 1
       end
 
@@ -68,9 +72,10 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
     
     case -h --help '*'
       echo "Usage: dotfish         Show current symbols"
-      echo "       dotfish init    Enable the current folder for .fish"
-      echo "       dotfish load    Reload the .fish script (alias: reload)"
-      echo "       dotfish unload  Remove the loaded symbols"
+      echo "       dotfish init    Enable current folder for .fish"
+      echo "       dotfish load    Reload .fish script (alias: reload)"
+      echo "       dotfish unload  Remove loaded symbols"
+      echo "       dotfish diff    Show .fish diff"
   end
 end
 
@@ -93,26 +98,18 @@ function _dotfish_clear
 end
 
 function _dotfish_load
-  set_color 808080
-  set --local forbidden_message "dotfish: forbidden for this folder"
-  set --local store_path ~/.dotfish
-  set --local salt_path $store_path/salt
-  set --local folders_path $store_path/folders
+  set_color 808080 
 
-  if not test -O $salt_path -a -O $folders_path
-    echo $forbidden_message >&2
+  set --local hash (echo -n $PWD | openssl sha256 | cut -d' ' -f2)
+  set --local hash_path ~/.dotfish/$hash
+
+  if not test -O $hash_path
+    echo "dotfish: forbidden for this folder" >&2
     return 1
   end
 
-  set hash (
-    echo -n $PWD |
-    command cat - $salt_path |
-    openssl sha256 |
-    cut -d' ' -f2
-  )
-
-  if not grep --quiet $hash $folders_path
-    echo $forbidden_message >&2
+  if not diff $hash_path .fish &> /dev/null
+    echo "dotfish: .fish is changed, run 'dotfish init' to refresh" >&2
     return 1
   end
 
