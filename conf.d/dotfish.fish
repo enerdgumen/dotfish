@@ -138,12 +138,17 @@ function _dotfish_load
   set_color normal
 end
 
-function _dotfish_update --on-variable PWD
-  test $PWD != "$__dotfish_loaded"
-  and _dotfish_clear
+function _dotfish_update
+  _dotfish_clear
   and test -O .fish
   and _dotfish_load
-  return
+  or true
+end
+
+function _dotfish_refresh --on-variable PWD
+  test $PWD != "$__dotfish_loaded"
+  and _dotfish_update
+  or true
 end
 
 _dotfish_update
