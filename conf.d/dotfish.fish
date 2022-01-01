@@ -82,13 +82,13 @@ end
 function _dotfish_clear
   set_color 808080
   for it in $__dotfish_vars
-    echo "dotfish: -$it (τ)"
+    echo "dotfish: -$it (τ)" >&2
     set --erase $it
   end
   set --erase __dotfish_vars
 
   for it in $__dotfish_functions
-    echo "dotfish: -$it (λ)"
+    echo "dotfish: -$it (λ)" >&2
     functions --erase $it
   end
   set --erase __dotfish_functions
@@ -122,7 +122,7 @@ function _dotfish_load
   for it in $curr_vars
     if not contains $it $prev_vars
       set --append __dotfish_vars $it
-      echo "dotfish: +$it (τ)"
+      echo "dotfish: +$it (τ)" >&2
     end
   end
 
@@ -130,7 +130,7 @@ function _dotfish_load
   for it in (functions)
     if not contains $it $prev_functions
       set --append __dotfish_functions $it
-      echo "dotfish: +$it (λ)"
+      echo "dotfish: +$it (λ)" >&2
     end
   end
 
