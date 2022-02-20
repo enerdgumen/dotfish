@@ -1,8 +1,7 @@
 function dotfish --argument-names cmd --description "Auto-source .fish scripts"
   switch "$cmd"
-    case init
+    case on
       set --local hash (echo -n $PWD | openssl sha256 | cut -d' ' -f2)
-
       set --local store_path ~/.dotfish
       set --local index_path $store_path/index
       set --local hash_path $store_path/$hash
@@ -14,7 +13,7 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
         echo "$hash $PWD" >> $index_path
       end
 
-      echo "Dotfish enabled for this folder."
+      echo "Dotfish enabled in this folder."
       if not test -e .fish
         echo "function hello" > .fish
         echo "  echo Hello \$argv" >> .fish
@@ -31,6 +30,20 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
       chmod 600 $hash_path
 
       _dotfish_update
+    
+    case off
+      set --local hash (echo -n $PWD | openssl sha256 | cut -d' ' -f2)
+      set --local store_path ~/.dotfish
+      set --local index_path $store_path/index
+      set --local hash_path $store_path/$hash
+
+      if test -e $hash_path
+        grep -v $hash $index_path > $index_path.tmp
+        mv $index_path.tmp $index_path
+        rm $hash_path
+      end
+      _dotfish_clear
+      echo "Dotfish disabled in this folder."
     
     case diff
       set --local hash (echo -n $PWD | openssl sha256 | cut -d' ' -f2)
@@ -72,7 +85,8 @@ function dotfish --argument-names cmd --description "Auto-source .fish scripts"
     
     case -h --help '*'
       echo "Usage: dotfish         Show current symbols"
-      echo "       dotfish init    Enable current folder for .fish"
+      echo "       dotfish on      Enable current folder for .fish"
+      echo "       dotfish off     Disable current folder for .fish"
       echo "       dotfish load    Reload .fish script (alias: reload)"
       echo "       dotfish unload  Remove loaded symbols"
       echo "       dotfish diff    Show .fish diff"
@@ -104,12 +118,12 @@ function _dotfish_load
   set --local hash_path ~/.dotfish/$hash
 
   if not test -O $hash_path
-    echo "dotfish: forbidden for this folder" >&2
+    echo "dotfish: forbidden in this folder" >&2
     return 1
   end
 
   if not diff $hash_path .fish &> /dev/null
-    echo "dotfish: .fish is changed, run 'dotfish init' to refresh" >&2
+    echo "dotfish: .fish is changed, run 'dotfish on' to refresh or 'dotfish diff' to see the differences" >&2
     return 1
   end
 
