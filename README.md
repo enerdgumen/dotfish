@@ -18,7 +18,7 @@ curl https://raw.githubusercontent.com/enerdgumen/dotfish/main/conf.d/dotfish.fi
     -o ~/.config/fish/conf.d/dotfish.fish
 ```
 
-...or via [Oh My Fish][omf-link]:
+...or via [Oh My Fish][omf-link] (unavailable at the moment):
 ```
 omf install dotfish
 ```
