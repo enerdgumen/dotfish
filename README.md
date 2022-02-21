@@ -61,6 +61,18 @@ end
 
 After entering the project folder, executing `mix build` automatically starts the stack and runs the command in the dev container!
 
+## Integrations
+
+The `__dotfish_loaded` environment variable is set when .fish is loaded in the current session.
+
+This is an example of [Starship](https://starship.rs) configuration:
+
+```toml
+[custom.dotfish]
+when = """ test -n "$__dotfish_loaded" """
+symbol = "🐠"
+```
+
 ## Security considerations
 
 In order to prevent remote command execution, Dotfish requires that you explicitly enable a folder to autoload the .fish file.
